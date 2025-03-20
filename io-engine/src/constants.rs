@@ -12,3 +12,6 @@ pub const EVENTING_TARGET: &str = "mbus-events-target";
 
 /// Service/ source component generating events for eventing.
 pub const SERVICE_NAME: &str = "io-engine";
+
+/// Default CA Certificate Path (used by io-engine-client)
+pub static DEFAULT_CA_PATH: &str = "/etc/cert/ca.crt";

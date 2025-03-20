@@ -253,6 +253,12 @@ pub struct MayastorCliArgs {
     /// Enables globally blob store cluster release on unmap.
     #[clap(long, env = "ENABLE_BS_CLUSTER_UNMAP", hide = true)]
     pub bs_cluster_unmap: bool,
+    #[structopt(long = "tls-server-cert-path", requires("tls-server-key-path"))]
+    pub tls_server_cert_path: Option<String>,
+    #[structopt(long = "tls-server-key-path", requires("tls-server-cert-path"))]
+    pub tls_server_key_path: Option<String>,
+    #[structopt(long = "tls-client-ca-path")]
+    pub tls_client_ca_path: Option<String>,
 }
 
 fn delay_compat(s: &str) -> Result<bool, String> {
@@ -325,6 +331,9 @@ impl Default for MayastorCliArgs {
             developer_delay: false,
             rdma: false,
             bs_cluster_unmap: false,
+            tls_server_cert_path: None,
+            tls_server_key_path: None,
+            tls_client_ca_path: None,
         }
     }
 }

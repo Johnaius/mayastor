@@ -10,6 +10,10 @@ use once_cell::sync::OnceCell;
 use std::{env, str::FromStr, time::Duration};
 use version_info::raw_version_string;
 
+use crate::constants::DEFAULT_CA_PATH;
+use http::uri::Scheme;
+use tonic::transport::{Certificate, ClientTlsConfig};
+
 /// Mayastor sends registration messages in this interval (kind of heart-beat)
 const HB_INTERVAL_SEC: Duration = Duration::from_secs(5);
 /// How long we wait to send a registration message before timing out
@@ -117,11 +121,29 @@ impl Registration {
             },
             instance_uuid: uuid::Uuid::new_v4(),
         };
-        let endpoint = tonic::transport::Endpoint::from(registration_addr)
+
+        let endpoint = if registration_addr.scheme() == Some(&Scheme::HTTPS) {
+            // Load the CA certificate
+            let ca_cert = std::fs::read(DEFAULT_CA_PATH).unwrap();
+            let ca_cert = Certificate::from_pem(ca_cert);
+
+            // Configure TLS without domain name verification
+            let tls_config = ClientTlsConfig::new().ca_certificate(ca_cert);
+            // .danger_accept_invalid_hostnames(true);
+
+            tonic::transport::Endpoint::from(registration_addr)
+                .tls_config(tls_config)
+                .unwrap()
+        } else {
+            tonic::transport::Endpoint::from(registration_addr)
+        };
+
+        let endpoint = endpoint
             .connect_timeout(config.hb_timeout_sec)
             .timeout(config.hb_timeout_sec)
             .http2_keep_alive_interval(HTTP_KEEP_ALIVE_INTERVAL)
             .keep_alive_timeout(HTTP_KEEP_ALIVE_TIMEOUT);
+
         let channel = endpoint.connect_lazy();
         Self {
             config,
